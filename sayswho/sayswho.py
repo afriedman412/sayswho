@@ -3,19 +3,10 @@ Rewritten with less overhead.
 """
 import spacy
 from typing import Union, Iterable
-from rapidfuzz import fuzz
 import numpy as np
-from .attribution_helpers import (
-    span_contains, 
-    format_cluster, 
-    compare_quote_to_cluster_member,
-    pronoun_check,
-    prune_cluster_people,
-    clone_cluster,
-    get_manual_speaker_cluster
-    )
-from .quotes import direct_quotations, DQTriple
+from .quotes import direct_quotations
 from . import constants
+from . import attribution_helpers
 
 class Attributor:
     """
@@ -34,18 +25,16 @@ class Attributor:
         self.prune = prune
         self.exp = exp
         
-    def expand_match(self, match: Union[constants.QuoteEntMatch, Iterable, int]):
+    def expand_match(match):
         def expando(match):
-            for m_ in ['quote', 'cluster', 'person', 'ent']:
+            for m_ in ['quote', 'cluster', 'person']:
                 if getattr(match, f"{m_}_index", None) is not None:
-                    i = self.__getattribute__(f"{m_}s")
+                    i = eval(f"{m_}s")
                     v = getattr(match, f"{m_}_index")
-                    data = format_cluster(i[v]) if m_=="cluster" else i[v]
+                    data = attribution_helpers.format_cluster(i[v]) if m_=="cluster" else i[v]
                     print(m_.upper(), f": {v}""\n", data, "\n")
 
-        if isinstance(match, int):
-            expando(self.ent_matches[match])
-        elif isinstance(match, list):
+        if isinstance(match, list):
             for m in match:
                 expando(m)
         else:
@@ -54,11 +43,11 @@ class Attributor:
     def attribute(self, t: str):
         """
         Top level function. Parses text, matches quotes to clusters and gets ent matches.
-
-        TODO: Given that get_ent_matches accounts for self.ner, I can probably get rid of quotes_to_clusters and the if statement!
-
         Input:
             t (str) - text file to be analyzed and attributed
+
+        Output:
+            self.quote_matches (list[QuoteClusterMatch]) - list of quotes 
         """
         self.parse_text(t)
         self.quote_matches = self.get_matches()
@@ -86,12 +75,12 @@ class Attributor:
 
         # extract coref clusters and clone to doc
         self.clusters = {
-            int(k.split("_")[-1])-1: clone_cluster(cluster, self.doc) 
+            int(k.split("_")[-1])-1: attribution_helpers.clone_cluster(cluster, self.doc) 
             for k, cluster in self.coref_doc.spans.items() 
             if k.startswith("coref")
             }
         if self.prune:
-            self.clusters = {n:prune_cluster_people(cluster) for n, cluster in self.clusters.items()}
+            self.clusters = {n:attribution_helpers.prune_cluster_people(cluster) for n, cluster in self.clusters.items()}
         
         self.persons = [e for e in self.doc.ents if e.label_=="PERSON"]
         return
@@ -124,13 +113,13 @@ class Attributor:
                 (quote_index, cluster_index) 
                 for cluster_index, cluster in self.clusters.items()
                 for span in cluster
-                if compare_quote_to_cluster_member(quote, span)
+                if attribution_helpers.compare_quote_to_cluster_member(quote, span)
             ]
             
             pairs_dicto['quotes_persons'] += [
                 (quote_index, person_index)
                 for person_index, person in enumerate(self.persons)
-                if span_contains(quote, person)
+                if attribution_helpers.span_contains(quote, person)
                 ]
             
             pairs_dicto['quotes_clusters'] += [
@@ -138,7 +127,7 @@ class Attributor:
                 for cluster_index, cluster in self.clusters.items()
                 if quote_index not in [m[0] for m in set(pairs_dicto['quotes_clusters'])]
                 if quote.speaker[0].text in [p.text for p in self.persons]
-                if get_manual_speaker_cluster(quote, cluster)
+                if attribution_helpers.get_manual_speaker_cluster(quote, cluster)
                 ]
 
         pairs_dicto['clusters_persons'] = [
@@ -146,8 +135,8 @@ class Attributor:
             for person_index, person in enumerate(self.persons)
             for cluster_index, cluster in self.clusters.items()
             for span in cluster
-            if span_contains(person, span) 
-            if not pronoun_check(span)
+            if attribution_helpers.span_contains(person, span) 
+            if not attribution_helpers.pronoun_check(span)
 ]
         return pairs_dicto
     

@@ -1,3 +1,7 @@
+"""
+This is just my version of the Textacy quote attributor. Will remove this when it gets implemented in Textacy!
+"""
+
 from . import constants
 from spacy.tokens import Doc, Token, Span
 from spacy.symbols import VERB, PUNCT
@@ -5,10 +9,6 @@ from operator import attrgetter
 from collections import namedtuple
 import regex as re
 from typing import Literal, Iterable
-
-DQTriple: tuple[list[Token], list[Token], Span] = namedtuple(
-    "DQTriple", ["speaker", "cue", "content"]
-)
 
 def direct_quotations(doc: Doc):
     qtoks = [tok for tok in doc if tok.is_quote or (re.match(r"\n", tok.text))]
@@ -73,7 +73,7 @@ def direct_quotations(doc: Doc):
                         speaker = expand_noun(speaker_cand)
                         break
             if content and cue and speaker:
-                yield DQTriple(
+                yield constants.DQTriple(
                     speaker=sorted(speaker, key=attrgetter("i")),
                     cue=sorted(cue, key=attrgetter("i")),
                     content=doc[qtok_start_idx:qtok_end_idx+1],

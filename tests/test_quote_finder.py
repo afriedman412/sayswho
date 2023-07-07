@@ -3,7 +3,7 @@ Cribbed from textacy!!!
 """
 import pytest
 import spacy
-from sayswho.quote_fn import direct_quotations
+from sayswho.quotes import direct_quotations
 
 @pytest.fixture(scope="module")
 def nlp():

@@ -14,7 +14,7 @@ Install and update using [pip](https://pip.pypa.io/en/stable/):
 $ pip install sayswho
 ```
 
-You will probably need to install the coreferencing model manually, then re-update SpaCy. (see Notes)
+You will probably need to install the coreferencing model manually, then re-update SpaCy. (see [Notes](#notes))
 
 ```
 $ pip install pip install https://github.com/explosion/spacy-experimental/releases/download/v0.6.0/en_coreference_web_trf-3.4.0a0-py3-none-any.whl

@@ -5,6 +5,8 @@
 
 ## Notes
 - Corefencing is an experimental feature not fully integrated into SpaCy, and the current pipeline is built on SpaCy 3.4. I haven't had any problems using it with SpaCy 3.5+, but it takes some finesse to navigate the different versions.
+
+
 - I wrote this package as part of a larger project with a better-defined goal. The output of this version is kind of open-ended, and possible not as useful as it could be. HTML viz is coming, but I'm open to any suggestions about how this could be more useful!
 
 ## Installation
@@ -29,16 +31,29 @@ $ spacy download en_core_web_lg
 
 ## A Simple Example
 
-#### Instantiate `Attributor` and run `.attribute` on target text.
+##### Sample text adapted from [here](https://sports.yahoo.com/nets-jacque-vaughn-looking-forward-150705556.html):
+> Nets Coach Jacque Vaughn was optimistic when discussing Ben Simmons's prospects on NBA TV.
+> 
+> “It’s been great, being able to check in with Ben," Vaughn said, via Nets Daily. “I look forward to coaching a healthy Ben Simmons. The team is excited to have him healthy, being part of our program and moving forward.
+> 
+> "He has an innate ability to impact the basketball game on both ends of the floor. So, we missed that in the Philly series and looking forward to it.”
+> 
+> Simmons arrived in Brooklyn during the 2021-22 season, but did not play that year after a back injury. The 26-year-old would make 42 appearances (33 starts) during a tumult-filled season for Brooklyn.
+> 
+> “He is on the court. No setbacks," Vaughn later told reporters about Simmons' workouts. “We’ll continue to see him improve through the offseason.”
+
+
+#### Prep text with `prep_text_for_quote_detection()`, instantiate `Attributor` and run `.attribute` on target text.
+`prep_text_for_quote_detection()` tweaks the text to avoid some common errors and generally improve results.
 
 ```python
 from sayswho.sayswho import Attributor
 from sayswho import quote_helpers
 
-test_text = open("./tests/qa_test_file.txt").read()
+prepped_text = quote_helpers.prep_text_for_quote_detection(text)
 
 a = Attributor()
-a.attribute(test_text)
+a.attribute(prepped_text)
 ```
 
 
@@ -49,10 +64,12 @@ a.attribute(test_text)
 print(a.quotes)
 ```
 
-   	[DQTriple(speaker=[he], cue=[said], content=“Based on the actions the group was making, based on everything the gentlemen who came in had told me — if I allowed anyone in the store, they would try to cause harm to people,”),
-     DQTriple(speaker=[he], cue=[said], content=“I couldn’t see how big the group was. I thought, ’It’s just seven to 10 people. Maybe they’ll back off.’”),
-     DQTriple(speaker=[she], cue=[noted], content=“They were all late teens, early 20s, clean-cut, typical blondie, blue-eyed, wholesome Utah boys,”),
-     DQTriple(speaker=[Rogers], cue=[added], content=“Then this African-American guy came from the restaurant,”)]
+```
+[DQTriple(speaker=[Vaughn], cue=[said], content=“It’s been great, being able to check in with Ben,"),
+ DQTriple(speaker=[Vaughn], cue=[said], content=“I look forward to coaching a healthy Ben Simmons. The team is excited to have him healthy, being part of our program and moving forward."),
+ DQTriple(speaker=[Vaughn], cue=[told], content=“He is on the court. No setbacks,"),
+ DQTriple(speaker=[Vaughn], cue=[told], content=“We’ll continue to see him improve through the offseason.”)]
+```
 
 
 
@@ -63,51 +80,25 @@ print(a.quotes)
 print(a.clusters)
 ```
 
-
-
-
-   	[[four frightened, breathless men,
-      They,
-      they,
-      them,
-      the group,
-      they,
-      the group,
-      they,
-      the group,
-      the group],
-     [Terrance Mannery,
-      Mannery,
-      me,
-      I,
-      he,
-      I,
-      I,
-      Mannery,
-      Mannery,
-      his,
-      him,
-      Mannery],
-     [the Doki Doki dessert shop,
-      Doki Doki,
-      the store,
-      the shop,
-      Doki Doki,
-      Doki Doki,
-      the shop],
-     [just seven to 10 people, that],
-     [the Utah Pride Festival, Pride, Pride],
-     [the mob, the crowd, They],
-     [Michelle Turpin, who was walking west near Doki Doki with friends after Pride,
-      she,
-      Turpin],
-     [Jen Parsons-Soren, who had attended Pride with Turpin,, she],
-     [Lyft driver Ross Rogers, he, Rogers, Rogers],
-     [the entrance of Doki Doki, the entrance],
-     [this African-American guy, That],
-     [a small group, the attackers],
-     [the door, the door],
-     [one of the attackers, the man]]
+```
+[[Ben Simmons's,
+  Ben,
+  a healthy Ben Simmons,
+  him,
+  He,
+  Simmons,
+  The 26-year-old,
+  He,
+  Simmons'x,
+  him],
+ [Nets Coach Jacque Vaughn, Vaughn, I, Vaughn],
+ [Nets, The team, our, we],
+ [an innate ability to impact the basketball game on both ends of the floor,
+  that,
+  it],
+ [the 2021-22 season, that year],
+ [Brooklyn, Brooklyn, We]]
+```
 
 
 
@@ -117,21 +108,14 @@ print(a.clusters)
 ```python
 a.print_clusters()
 ```
-
-    0 {'them', 'the group', 'four frightened, breathless men', 'They', 'they'}
-    1 {'I', 'his', 'Terrance Mannery', 'he', 'him', 'me', 'Mannery'}
-    2 {'Doki Doki', 'the Doki Doki dessert shop', 'the shop', 'the store'}
-    3 {'that', 'just seven to 10 people'}
-    4 {'Pride', 'the Utah Pride Festival'}
-    5 {'the crowd', 'They', 'the mob'}
-    6 {'Michelle Turpin, who was walking west near Doki Doki with friends after Pride', 'she', 'Turpin'}
-    7 {'she', 'Jen Parsons-Soren, who had attended Pride with Turpin,'}
-    8 {'Rogers', 'Lyft driver Ross Rogers', 'he'}
-    9 {'the entrance', 'the entrance of Doki Doki'}
-    10 {'That', 'this African-American guy'}
-    11 {'a small group', 'the attackers'}
-    12 {'the door'}
-    13 {'one of the attackers', 'the man'}
+```
+0 {'Ben', 'He', 'The 26-year-old', 'a healthy Ben Simmons', "Simmons'x", "Ben Simmons's", 'Simmons', 'him'}
+1 {'I', 'Nets Coach Jacque Vaughn', 'Vaughn'}
+2 {'The team', 'our', 'we', 'Nets'}
+3 {'it', 'an innate ability to impact the basketball game on both ends of the floor', 'that'}
+4 {'that year', 'the 2021-22 season'}
+5 {'Brooklyn', 'We'}
+```
 
 
 #### Quote/cluster matches are saved to `.quote_matches` as `namedtuples`.
@@ -141,11 +125,12 @@ a.print_clusters()
 for qm in a.quote_matches:
     print(qm)
 ```
-
-    QuoteClusterMatch(quote_index=0, cluster_index=1)
-    QuoteClusterMatch(quote_index=1, cluster_index=1)
-    QuoteClusterMatch(quote_index=2, cluster_index=6)
-    QuoteClusterMatch(quote_index=3, cluster_index=8)
+```
+QuoteClusterMatch(quote_index=0, cluster_index=1)
+QuoteClusterMatch(quote_index=1, cluster_index=1)
+QuoteClusterMatch(quote_index=2, cluster_index=1)
+QuoteClusterMatch(quote_index=3, cluster_index=1)
+```
 
 
 #### Use `.expand_match()` to view and interpret quote/cluster matches.
@@ -154,29 +139,31 @@ for qm in a.quote_matches:
 ```python
 a.expand_match()
 ```
+```
+QUOTE : 0
+ DQTriple(speaker=[Vaughn], cue=[said], content=“It’s been great, being able to check in with Ben,") 
 
-    QUOTE : 0
-     DQTriple(speaker=[he], cue=[said], content=“Based on the actions the group was making, based on everything the gentlemen who came in had told me — if I allowed anyone in the store, they would try to cause harm to people,”) 
-    
-    CLUSTER : 1
-     ['Terrance Mannery', 'Mannery'] 
-    
-    QUOTE : 1
-     DQTriple(speaker=[he], cue=[said], content=“I couldn’t see how big the group was. I thought, ’It’s just seven to 10 people. Maybe they’ll back off.’”) 
-    
-    CLUSTER : 1
-     ['Terrance Mannery', 'Mannery'] 
-    
-    QUOTE : 2
-     DQTriple(speaker=[she], cue=[noted], content=“They were all late teens, early 20s, clean-cut, typical blondie, blue-eyed, wholesome Utah boys,”) 
-    
-    CLUSTER : 6
-     ['Michelle Turpin, who was walking west near Doki Doki with friends after Pride', 'Turpin'] 
-    
-    QUOTE : 3
-     DQTriple(speaker=[Rogers], cue=[added], content=“Then this African-American guy came from the restaurant,”) 
-    
-    CLUSTER : 8
-     ['Rogers', 'Lyft driver Ross Rogers'] 
+CLUSTER : 1
+ ['Nets Coach Jacque Vaughn', 'Vaughn'] 
+
+QUOTE : 1
+ DQTriple(speaker=[Vaughn], cue=[said], content=“I look forward to coaching a healthy Ben Simmons. The team is excited to have him healthy, being part of our program and moving forward.") 
+
+CLUSTER : 1
+ ['Nets Coach Jacque Vaughn', 'Vaughn'] 
+
+QUOTE : 2
+ DQTriple(speaker=[Vaughn], cue=[told], content=“He is on the court. No setbacks,") 
+
+CLUSTER : 1
+ ['Nets Coach Jacque Vaughn', 'Vaughn'] 
+
+QUOTE : 3
+ DQTriple(speaker=[Vaughn], cue=[told], content=“We’ll continue to see him improve through the offseason.”) 
+
+CLUSTER : 1
+ ['Nets Coach Jacque Vaughn', 'Vaughn'] 
+```
+
     
 

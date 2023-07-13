@@ -1,13 +1,20 @@
 # SaysWho
-SaysWho is a Python package for identifying and attributing quotes in text. It uses [a combination of grammar and logic](https://textacy.readthedocs.io/en/latest/) to find quotes and their speakers, then uses a [coreferencing model](https://explosion.ai/blog/coref) to better clarify who is speaking. 
+**SaysWho** is a Python package for identifying and attributing quotes in text. It uses a combination of logic and grammer to find quotes and their speakers, then uses a [coreferencing model](https://explosion.ai/blog/coref) to better clarify who is speaking. It's built on [Textacy]([a combination of grammar and logic](https://textacy.readthedocs.io/en/latest/) ) and [SpaCy](https://spacy.io/).
+
+
+
+## Notes
+- Corefencing is an experimental feature not fully integrated into SpaCy, and the current pipeline is built on SpaCy 3.4. I haven't had any problems using it with SpaCy 3.5+, but it takes some finesse to navigate the different versions.
+- I wrote this package as part of a larger project with a better-defined goal. The output of this version is kind of open-ended, and possible not as useful as it could be. HTML viz is coming, but I'm open to any suggestions about how this could be more useful!
 
 ## Installation
 Install and update using [pip](https://pip.pypa.io/en/stable/):
+
 ```
 $ pip install sayswho
 ```
 
-You will probably need to install the coreferencing model manually, then re-update SpaCy.
+You will probably need to install the coreferencing model manually, then re-update SpaCy. (see Notes)
 
 ```
 $ pip install pip install https://github.com/explosion/spacy-experimental/releases/download/v0.6.0/en_coreference_web_trf-3.4.0a0-py3-none-any.whl
@@ -15,49 +22,34 @@ $ pip install spacy -U
 ```
 
 You also might need to download the main large SpaCy english model.
+
 ```
 $ spacy download en_core_web_lg
 ```
 
-## Notes
-- Coreferencing (which this package uses to resolve speakers) is an experimental feature not fully implemented in SpaCy. SaysWho uses a pretrained model which SpaCy made available, but it was built with older code. This explains the version roulette required on installation.
-
 ## A Simple Example
 
+#### Instantiate `Attributor` and run `.attribute` on target text.
 
 ```python
 from sayswho.sayswho import Attributor
 from sayswho import quote_helpers
+
 test_text = open("./tests/qa_test_file.txt").read()
-test_text = quote_helpers.prep_text_for_quote_detection(test_text)
-```
 
-#### Instantiate `Attributor` and run `.attribute` on target text.
-This will probably raise an warning about differing SpaCy models, which you can ignore. 
-
-
-```python
 a = Attributor()
 a.attribute(test_text)
 ```
-
-    /usr/local/lib/python3.11/site-packages/spacy/util.py:910: UserWarning: [W095] Model 'en_coreference_web_trf' (3.4.0a2) was trained with spaCy v3.3 and may not be 100% compatible with the current version (3.6.0). If you see errors or degraded performance, download a newer compatible model or retrain your custom model with the current spaCy version. For more details and available updates, run: python -m spacy validate
-      warnings.warn(warn_msg)
-    /usr/local/lib/python3.11/site-packages/spacy/util.py:910: UserWarning: [W095] Model 'en_core_web_lg' (3.5.0) was trained with spaCy v3.5 and may not be 100% compatible with the current version (3.6.0). If you see errors or degraded performance, download a newer compatible model or retrain your custom model with the current spaCy version. For more details and available updates, run: python -m spacy validate
-      warnings.warn(warn_msg)
 
 
 #### See speaker, cue and content of every quote with `.quotes`.
 
 
 ```python
-a.quotes
+print(a.quotes)
 ```
 
-
-
-
-    [DQTriple(speaker=[he], cue=[said], content=“Based on the actions the group was making, based on everything the gentlemen who came in had told me — if I allowed anyone in the store, they would try to cause harm to people,”),
+   	[DQTriple(speaker=[he], cue=[said], content=“Based on the actions the group was making, based on everything the gentlemen who came in had told me — if I allowed anyone in the store, they would try to cause harm to people,”),
      DQTriple(speaker=[he], cue=[said], content=“I couldn’t see how big the group was. I thought, ’It’s just seven to 10 people. Maybe they’ll back off.’”),
      DQTriple(speaker=[she], cue=[noted], content=“They were all late teens, early 20s, clean-cut, typical blondie, blue-eyed, wholesome Utah boys,”),
      DQTriple(speaker=[Rogers], cue=[added], content=“Then this African-American guy came from the restaurant,”)]
@@ -68,13 +60,13 @@ a.quotes
 
 
 ```python
-a.clusters
+print(a.clusters)
 ```
 
 
 
 
-    [[four frightened, breathless men,
+   	[[four frightened, breathless men,
       They,
       they,
       them,
@@ -156,7 +148,7 @@ for qm in a.quote_matches:
     QuoteClusterMatch(quote_index=3, cluster_index=8)
 
 
-#### Use `.expand_match()` to interpret quote/cluster matches.
+#### Use `.expand_match()` to view and interpret quote/cluster matches.
 
 
 ```python

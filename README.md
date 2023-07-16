@@ -1,13 +1,12 @@
 # SaysWho
 **SaysWho** is a Python package for identifying and attributing quotes in text. It uses a combination of logic and grammer to find quotes and their speakers, then uses a [coreferencing model](https://explosion.ai/blog/coref) to better clarify who is speaking. It's built on [Textacy](https://textacy.readthedocs.io/en/latest/) and [SpaCy](https://spacy.io/).
 
-
-
 ## Notes
 - Corefencing is an experimental feature not fully integrated into SpaCy, and the current pipeline is built on SpaCy 3.4. I haven't had any problems using it with SpaCy 3.5+, but it takes some finesse to navigate the different versions.
 
+- SaysWho grew out of a larger project for analyzing newspaper articles from Lexis between ~250 and ~2000 words, and it is optimized to navitage the syntax and common errors particular to that text.
 
-- I wrote this package as part of a larger project with a better-defined goal. The output of this version is kind of open-ended, and possible not as useful as it could be. HTML viz is coming, but I'm open to any suggestions about how this could be more useful!
+- The output of this version is kind of open-ended, and possibly not as useful as it could be. HTML viz is coming, but I'm open to any suggestions about how this could be more useful!
 
 ## Installation
 Install and update using [pip](https://pip.pypa.io/en/stable/):
@@ -16,16 +15,11 @@ Install and update using [pip](https://pip.pypa.io/en/stable/):
 $ pip install sayswho
 ```
 
-You will probably need to install the coreferencing model manually, then re-update SpaCy. (see [Notes](#notes))
+You will probably need to do this to navigate some versioning issues (see [Notes](#notes))
 
 ```
-$ pip install pip install https://github.com/explosion/spacy-experimental/releases/download/v0.6.0/en_coreference_web_trf-3.4.0a0-py3-none-any.whl
+$ pip install https://github.com/explosion/spacy-experimental/releases/download/v0.6.0/en_coreference_web_trf-3.4.0a0-py3-none-any.whl
 $ pip install spacy -U
-```
-
-You also might need to download the main large SpaCy english model.
-
-```
 $ spacy download en_core_web_lg
 ```
 
@@ -43,17 +37,12 @@ $ spacy download en_core_web_lg
 > “He is on the court. No setbacks," Vaughn later told reporters about Simmons' workouts. “We’ll continue to see him improve through the offseason.”
 
 
-#### Prep text with `prep_text_for_quote_detection()`, instantiate `Attributor` and run `.attribute` on target text.
-`prep_text_for_quote_detection()` tweaks the text to avoid some common errors and generally improve results.
+#### Instantiate `SaysWho` and run `.attribute` on target text.
 
 ```python
-from sayswho.sayswho import Attributor
-from sayswho import quote_helpers
+from sayswho import SaysWho
 
-prepped_text = quote_helpers.prep_text_for_quote_detection(text)
-
-a = Attributor()
-a.attribute(prepped_text)
+sw = SaysWho(text)
 ```
 
 
@@ -61,7 +50,7 @@ a.attribute(prepped_text)
 
 
 ```python
-print(a.quotes)
+print(sw.quotes)
 ```
 
 ```
@@ -77,7 +66,7 @@ print(a.quotes)
 
 
 ```python
-print(a.clusters)
+print(sw.clusters)
 ```
 
 ```
@@ -106,7 +95,7 @@ print(a.clusters)
 
 
 ```python
-a.print_clusters()
+sw.print_clusters()
 ```
 ```
 0 {'Ben', 'He', 'The 26-year-old', 'a healthy Ben Simmons', "Simmons'x", "Ben Simmons's", 'Simmons', 'him'}
@@ -122,7 +111,7 @@ a.print_clusters()
 
 
 ```python
-for qm in a.quote_matches:
+for qm in sw.quote_matches:
     print(qm)
 ```
 ```
@@ -137,7 +126,7 @@ QuoteClusterMatch(quote_index=3, cluster_index=1)
 
 
 ```python
-a.expand_match()
+sw.expand_match()
 ```
 ```
 QUOTE : 0

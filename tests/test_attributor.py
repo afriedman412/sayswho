@@ -1,13 +1,13 @@
 import pytest
 import spacy
-from sayswho.sayswho import Attributor
+from sayswho import SaysWho
 
 spacy.prefer_gpu()
 
 
 @pytest.fixture(scope="module")
 def a():
-    return Attributor()
+    return SaysWho()
 
 def test_attribution(a):
     test_text = open("./tests/qa_test_file.txt").read()

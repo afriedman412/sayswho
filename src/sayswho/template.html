@@ -1,0 +1,41 @@
+<html>
+
+<head>
+    <title>{{ title }}</title>
+    <meta http-equiv="Content-Type" content="text/html; charset=utf-8">
+    <meta http-equiv="x-ua-compatible" content="IE=edge">
+    <meta name="viewport" content="width=device-width" intitial-scale="1" maximum-scale="1">
+    <link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/bootstrap/3.3.6/css/bootstrap.min.css">
+    <link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/bootstrap/3.3.6/css/bootstrap-theme.min.css">
+</head>
+
+<body>
+    <div id="main-wrapper" style="padding-top: 3%">
+        <div class="row">
+            <div class="col-md-offset-2 col-md-8">
+                <div class="fulldoc">
+                    <div id="bodytext">
+                        {{ bodytext }}
+                    </div><br>
+                </div>
+            </div>
+        </div>
+        <div class="row">
+            <div class="col-md-offset-2 col-md-8">
+            {% set offset = 1 %}
+            {% for q in quotes %}
+            <div>
+                <a name="{{ loop.index-offset }}"></a>
+                <a href="#quote{{ loop.index-offset }}"><h4>Quote {{ loop.index-offset }}</h4></a>
+                    <b>Quote:</b> <span id="quote-data-{{ loop.index-offset }}">{{ q.content }}</span><br>
+                    <b>Cue:</b> <span id="cue-{{ loop.index-offset }}">{{ q.cue }}</span><br>
+                    <b>Speaker: </b><span id="speaker-{{ loop.index-offset }}">{{ q.speaker }}</span><br>
+                    <b>Cluster Index: </b><span id="cluster-index-{{ loop.index-offset }}">{{ q.cluster_index }}</span><br>
+                    <b>Cluster: </b><span id="cluster-{{ loop.index-offset }}">{{ q.cluster }}</span><br>
+                    <br>
+            </div>
+        {% endfor %}
+    </div>
+</body>
+
+</html>

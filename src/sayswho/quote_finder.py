@@ -3,13 +3,13 @@ This is just my version of the Textacy quote attributor. Will remove this if/whe
 """
 
 from . import constants
-from spacy.tokens import Doc, Token, Span
-from spacy.symbols import VERB, PUNCT
 from operator import attrgetter
 import regex as re
 from typing import Literal, Iterable
+from spacy.tokens import Doc, Token, Span
+from spacy.symbols import VERB, PUNCT
 
-def direct_quotations(doc: Doc):
+def quote_finder(doc: Doc):
     """
     
     """

@@ -3,7 +3,7 @@ Cribbed from textacy!!!
 """
 import pytest
 import spacy
-from sayswho.quotes import direct_quotations
+from sayswho.quote_finder import quote_finder
 
 
 @pytest.fixture(scope="module")
@@ -51,7 +51,7 @@ def nlp():
     ],
 )
 def test_direct_quotations(nlp, text, exp):
-    obs = list(direct_quotations(nlp(text)))
+    obs = list(quote_finder(nlp(text)))
     assert all(
         hasattr(dq, attr) for dq in obs for attr in ["speaker", "cue", "content"]
     )
@@ -92,5 +92,5 @@ def test_direct_quotations(nlp, text, exp):
     ],
 )
 def test_adjustment_for_quote_detection(nlp, text, speakers):
-    quotes = direct_quotations(nlp(text))
+    quotes = quote_finder(nlp(text))
     assert [speaker.text for quote in quotes for speaker in quote.speaker] == speakers

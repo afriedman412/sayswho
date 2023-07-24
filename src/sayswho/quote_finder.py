@@ -9,10 +9,9 @@ from typing import Literal, Iterable
 from spacy.tokens import Doc, Token, Span
 from spacy.symbols import VERB, PUNCT
 
+
 def quote_finder(doc: Doc):
-    """
-    
-    """
+    """ """
     qtoks = [tok for tok in doc if tok.is_quote or (re.match(r"\n", tok.text))]
     qtok_idx_pairs = [(-1, -1)]
     for n, q in enumerate(qtoks):

@@ -288,6 +288,7 @@ def compare_spans(
         ]
     )
 
+
 def filter_cue_candidates(tok):
     return all([tok.pos == VERB, tok.lemma_ in _reporting_verbs])
 
@@ -447,18 +448,20 @@ def prep_text_for_quote_detection(t, para_char="\n", exp: bool = False):
         [para_quote_fixer(p, exp=exp) for p in t.split(para_char) if p]
     )
 
+
 # VIZ
-def generate_code(
-        n: int, label: str, start: bool=True, color_key: dict={}
-    ) -> str:
+def generate_code(n: int, label: str, start: bool = True, color_key: dict = {}) -> str:
+    if label in color_key:
         color = color_key.get(label)
-        if label.lower()=='quote':
-            if start:
-                return f"<a name=\"quote{n}\"></a><a href=\"#{n}\"><span id=\"QUOTE\" style=\"background-color: {color};\">"
-            else:
-                return "</span></a>"
+    else:
+        color = "PapayaWhip"
+    if label.lower() == "quote":
+        if start:
+            return f'<a name="quote{n}"></a><a href="#{n}"><span id="QUOTE" style="background-color: {color};">'
         else:
-            if start:
-                return f"<span id=\"{label}\" style=\"color: {color};\">"
-            else:
-                return "</span>"
+            return "</span></a>"
+    else:
+        if start:
+            return f'<span id="{label}" style="color: {color};">'
+        else:
+            return "</span>"

@@ -10,16 +10,24 @@
 
 ## Installation
 Install and update using [pip](https://pip.pypa.io/en/stable/):
-
 ```
 $ pip install sayswho
 ```
 
-You will probably need to do this to navigate some versioning issues (see [Notes](#notes))
 
+Install the pre-trained SpaCy coreferencing pipeline.
 ```
-$ pip install https://github.com/explosion/spacy-experimental/releases/download/v0.6.0/en_coreference_web_trf-3.4.0a0-py3-none-any.whl
+$ pip install https://github.com/explosion/spacy-experimental/releases/download/v0.6.1/en_coreference_web_trf-3.4.0a2-py3-none-any.whl
+```
+
+(Optional) If you want to use the most recent version of SpaCy, you will need to update it here. (see [Notes](#notes))
+```
 $ pip install spacy -U
+```
+
+
+Download the SpaCy large english model.
+```
 $ spacy download en_core_web_lg
 ```
 
@@ -154,5 +162,9 @@ CLUSTER : 1
  ['Nets Coach Jacque Vaughn', 'Vaughn'] 
 ```
 
-    
+#### Use `.render_to_html()` to output an HTML file with your text, highlighted quotes, and associated clusters.
+
+```
+sw.render_to_html(article_title="My Article Title")
+```
 

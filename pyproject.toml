@@ -1,6 +1,6 @@
 [tool.poetry]
 name = "sayswho"
-version = "0.1.2"
+version = "0.1.4"
 license = "MIT"
 description = "Quote identification, attribution and resolution."
 authors = ["Andy Friedman <afriedman412@gmail.com>"]

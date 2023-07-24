@@ -6,6 +6,7 @@ from . import constants
 from . import helpers
 from jinja2 import Environment, FileSystemLoader
 
+
 class SaysWho:
     """
     Main class for package. Instantiation loads spacy models so they don't have to be loaded again for repeat use.
@@ -24,10 +25,14 @@ class SaysWho:
         coref_nlp: str = "en_coreference_web_trf",
         base_nlp: str = "en_core_web_lg",
         prune: bool = True,
-        prep_text: bool = True
+        prep_text: bool = True,
     ):
-        self.coref_nlp = spacy.load(coref_nlp)
-        self.base_nlp = spacy.load(base_nlp)
+        for v in ["coref_nlp", "base_nlp"]:
+            if not spacy.util.is_package(eval(v)):
+                raise OSError(
+                    f"SpaCy model {v} not installed. See README for instructions on how to install models."
+                )
+            self.__setattr__(v, spacy.load(eval(v)))
         self.prune = prune
         self.prep_text = prep_text
         if text:
@@ -42,7 +47,7 @@ class SaysWho:
         """
         if not match:
             match = self.quote_matches
-            
+
         if isinstance(match, list):
             for m in match:
                 self.expand_match(m)
@@ -51,11 +56,7 @@ class SaysWho:
                 if getattr(match, f"{m_}_index", None) is not None:
                     i = eval(f"self.{m_}s")
                     v = getattr(match, f"{m_}_index")
-                    data = (
-                        helpers.format_cluster(i[v])
-                        if m_ == "cluster"
-                        else i[v]
-                    )
+                    data = helpers.format_cluster(i[v]) if m_ == "cluster" else i[v]
                     print(m_.upper(), f": {v}" "\n", data, "\n")
         return
 
@@ -102,8 +103,8 @@ class SaysWho:
             if k.startswith("coref")
         ]
         if self.prune:
-            self.clusters = [helpers.prune_cluster_people(cluster)
-                for cluster in self.clusters
+            self.clusters = [
+                helpers.prune_cluster_people(cluster) for cluster in self.clusters
             ]
 
         self.persons = [e for e in self.doc.ents if e.label_ == "PERSON"]
@@ -122,19 +123,18 @@ class SaysWho:
         big_matrix = np.concatenate(
             (
                 np.transpose(
-                np.nonzero(
-                    arrays["quotes_persons"].dot(
-                        arrays["clusters_persons"].T
+                    np.nonzero(
+                        arrays["quotes_persons"].dot(arrays["clusters_persons"].T)
                     )
-                )
-            ),
-            np.transpose(np.nonzero(arrays["quotes_clusters"])),
+                ),
+                np.transpose(np.nonzero(arrays["quotes_clusters"])),
             )
         )
 
-        results = sorted(list(set(
-            [constants.QuoteClusterMatch(i,j) for i,j in big_matrix]
-            )), key=lambda m: m.quote_index)
+        results = sorted(
+            list(set([constants.QuoteClusterMatch(i, j) for i, j in big_matrix])),
+            key=lambda m: m.quote_index,
+        )
 
         return results
 
@@ -145,6 +145,9 @@ class SaysWho:
         TODO: Ensure pronouns aren't being skipped!
         TODO: Make ratio threshold a variable
         """
+        if not all([v in self.__dict__ for v in ["quotes", "clusters", "persons"]]):
+            raise Exception("No text parsed -- run SaysWho.attribute(text).")
+
         pairs_dicto = {
             p: []
             for p in [
@@ -190,7 +193,7 @@ class SaysWho:
         """
         Convenience function for converting quote/cluster, quote/person and cluster/person pairs into binary matrices.
 
-        Input: 
+        Input:
             key (str) - data types in pairs, connected by "_" (ie "quotes_clusters" means the pairs data is (quote, cluster))
             pairs (list[tuple]) - (data type 1, data type 2) matches
 
@@ -202,7 +205,7 @@ class SaysWho:
         for i, j in pairs:
             m[i, j] = 1
         return m
-    
+
     def print_clusters(self):
         """
         Print clusters with duplicate text removed. For easier interpretation!
@@ -214,24 +217,42 @@ class SaysWho:
     def process_quote_for_rendering(self, quote_match):
         quote = {
             "content": self.quotes[quote_match.quote_index].content,
-            "cue": "".join([t.text_with_ws for t in self.quotes[quote_match.quote_index].cue]),
-            "cluster": ', '.join(
-                set([c.text for c in self.clusters[quote_match.cluster_index] if c[0].pos_ !="PRON"])) 
+            "cue": "".join(
+                [t.text_with_ws for t in self.quotes[quote_match.quote_index].cue]
+            ),
+            "cluster": ", ".join(
+                set(
+                    [
+                        c.text
+                        for c in self.clusters[quote_match.cluster_index]
+                        if c[0].pos_ != "PRON"
+                    ]
+                )
+            ),
         }
         return quote
-    
+
     def yield_quotes(self):
         for quote_index in range(len(self.quotes)):
-            for m in (qm for qm in self.quote_matches if qm.quote_index==quote_index):
+            for m in (qm for qm in self.quote_matches if qm.quote_index == quote_index):
                 base_dict = self.process_quote_for_rendering(m)
-                base_dict['cluster_index'] = m.cluster_index
-                base_dict['cluster'] = ', '.join(
-                    set([c.text for c in self.clusters[m.cluster_index] if c[0].pos_ !="PRON"])
+                base_dict["cluster_index"] = m.cluster_index
+                base_dict["cluster"] = ", ".join(
+                    set(
+                        [
+                            c.text
+                            for c in self.clusters[m.cluster_index]
+                            if c[0].pos_ != "PRON"
+                        ]
+                    )
                 )
-            yield(base_dict)
-    
+            yield (base_dict)
+
     def process_text_into_html(self):
-        quote_indexes = [((q.content.start, q.content.end), "QUOTE", n) for n, q in enumerate(self.quotes)]
+        quote_indexes = [
+            ((q.content.start, q.content.end), "QUOTE", n)
+            for n, q in enumerate(self.quotes)
+        ]
         html_output = "<p>"
         color_key = {}
         for token in self.doc:
@@ -251,20 +272,34 @@ class SaysWho:
 
         html_output += "</p>"
         return html_output
-    
-    def render_to_html(self, file_name: str = "temp.html"):
-        metadata = {
-            "title": "my article",
-            "bodytext": self.process_text_into_html(),
-            "quotes": list(self.yield_quotes())
-        }
-        rendered = Environment(
-            loader=FileSystemLoader("./")
-        ).get_template('template.html').render(metadata)
 
-        with open(f"{file_name}.html", "w+") as f:
-            try:
-                f.write(rendered)
-            except UnicodeDecodeError:
-                rendered = re.sub("\u2014", "-", rendered)
-                f.write(rendered)
+    def render_to_html(
+        self,
+        article_title: str = "My Article",
+        output_path: str = "temp.html",
+        save_file: bool = True,
+    ):
+        metadata = {
+            "title": article_title,
+            "bodytext": self.process_text_into_html(),
+            "quotes": list(self.yield_quotes()),
+        }
+        rendered = (
+            Environment(loader=FileSystemLoader("./"))
+            .get_template("template.html")
+            .render(metadata)
+        )
+
+        if save_file:
+            if not output_path.endswith(".html"):
+                output_path = output_path + ".html"
+            with open(output_path, "w+") as f:
+                try:
+                    f.write(rendered)
+                except UnicodeDecodeError:
+                    rendered = re.sub("\u2014", "-", rendered)
+                    f.write(rendered)
+            return
+
+        else:
+            return rendered

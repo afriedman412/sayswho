@@ -5,6 +5,7 @@ from .quote_finder import quote_finder
 from . import constants
 from . import helpers
 from jinja2 import Environment, FileSystemLoader
+from typing import Iterable
 
 
 class SaysWho:
@@ -13,8 +14,10 @@ class SaysWho:
 
     Input:
         text (str) - if provided, text will be analyzed on instantiation
+        file_path (str) - if provided and no text provided, text will be loaded from this path and and analyzed
         coref_nlp (str) - name of coref model
         base_nlp (str) - name of base model (for everything but coref) ... using en_core_web_lg because results are better than smaller models.
+        ner_nlp (str) - name of pretrained model for NER detection
         prune (bool) - if True, outlying PERSONS will be removed from coref clusters via helpers.prune_cluster_people
         prep_text (bool) if True, text will be prepped for analysis via helpers.prep_text_for_quote_detection
     """
@@ -22,10 +25,12 @@ class SaysWho:
     def __init__(
         self,
         text: str = None,
+        file_path: str = None,
         coref_nlp: str = "en_coreference_web_trf",
         base_nlp: str = "en_core_web_lg",
+        ner_nlp: str = None,
         prune: bool = True,
-        prep_text: bool = True,
+        prep_text: bool = True
     ):
         for v in ["coref_nlp", "base_nlp"]:
             if not spacy.util.is_package(eval(v)):
@@ -33,17 +38,43 @@ class SaysWho:
                     f"SpaCy model {v} not installed. See README for instructions on how to install models."
                 )
             self.__setattr__(v, spacy.load(eval(v)))
+
+        if ner_nlp:
+            self.set_ner_model(ner_nlp)
+            
         self.prune = prune
         self.prep_text = prep_text
         if text:
             self.attribute(text)
+        elif file_path:
+            text = open(file_path).read()
+            self.attribute(text)
+
+    @property
+    def ner(self):
+        """
+        Whether to do NER processing.
+
+        Output:
+            bool
+        """
+        return 'ner_nlp' in self.__dict__
+    
+    def set_ner_model(self, ner_nlp: str):
+        try:
+            self.ner_nlp = spacy.load(ner_nlp)
+            if 'sentencizer' not in ner_nlp.pipe_names:
+                self.ner_nlp.add_pipe("sentencizer")
+        except Exception as e:
+            raise Exception("NER model not properly loaded.")
+
 
     def expand_match(self, match=None):
         """
         Makes QuoteClusterMatch (or a list of QuoteClusterMatches) human-interpretable.
 
         Input:
-            match (None, QuoteClusterMatch or list[QuoteClusterMatch]) - the QuoteClusterMatch(s) to be interpreted. Uses self.quote_matches if nothing is proivded.
+            match (None, QuoteClusterMatch or list[QuoteClusterMatch]) - the QuoteClusterMatch(s) to be interpreted. Uses self.quote_matches if nothing is provided.
         """
         if not match:
             match = self.quote_matches
@@ -52,7 +83,7 @@ class SaysWho:
             for m in match:
                 self.expand_match(m)
         else:
-            for m_ in ["quote", "cluster", "person"]:
+            for m_ in ["quote", "cluster", "person", "ents"]:
                 if getattr(match, f"{m_}_index", None) is not None:
                     i = eval(f"self.{m_}s")
                     v = getattr(match, f"{m_}_index")
@@ -92,6 +123,9 @@ class SaysWho:
         # instantiate spacy doc
         self.coref_doc = self.coref_nlp(text)
         self.doc = self.base_nlp(text)
+
+        if self.ner:
+            self.ner_doc = self.ner_nlp(text)
 
         # extract quotations
         self.quotes = [q for q in quote_finder(self.doc)]
@@ -135,9 +169,41 @@ class SaysWho:
             list(set([constants.QuoteClusterMatch(i, j) for i, j in big_matrix])),
             key=lambda m: m.quote_index,
         )
-
         return results
+    
+    def get_quote_ents(self, ent_labels: Iterable=None):
+        """
+        Finds matching entities for each quote if entity matching is enabled.
 
+        This is clunky for now because eventually I'm going to consolidate all the models, but that will have to wait for SpaCy improvements.
+
+        TODO: Consolidate models!!!
+
+        Inputs:
+            ents (iterable) - a single string, or a list/tuple of strings, the entites to match the quote clusters to. Default is all entity types in self.ner_model except "PERSON".
+        """
+        if not self.ner:
+            raise Exception("Entity recognition not enabled! Run .set_ner_model() to set it up.")
+        if isinstance(ent_labels, str):
+            ent_labels = [ent_labels]
+        if not ent_labels:
+            ent_labels = [e for e in self.ner_nlp.get_pipe('ner').labels if e != "PERSON"]
+        
+        quote_ent_matches = []
+        for quote_match in self.quote_matches:
+            ent_matches = []
+            for ent in [e for e in self.ner_doc.ents if e.label_ in ent_labels]:
+                ent_matches.append(ent.label_)
+            quote_ent_matches.append(
+                constants.QuoteClusterEntMatch(
+                    quote_match.quote_index,
+                    quote_match.cluster_index,
+                    tuple(set(ent_matches))
+                )
+            )
+        self.quote_matches = quote_ent_matches
+        return
+    
     def make_pairs(self) -> dict:
         """
         Creates quote/person, quote/cluster and cluster/person pairs for resolution and cleaning.

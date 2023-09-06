@@ -10,6 +10,10 @@ QuoteClusterMatch: tuple[int, int] = namedtuple(
     "QuoteClusterMatch", ["quote_index", "cluster_index"], defaults=(None, None)
 )
 
+QuoteClusterEntMatch: tuple[int, int, tuple] = namedtuple(
+    "QuoteClusterEntMatch", ['quote_index', 'cluster_index', 'ents']
+)
+
 Boundaries: tuple[int, int] = namedtuple("boundaries", ["start", "end"])
 
 """

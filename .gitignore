@@ -1,6 +1,11 @@
 # ./sayswho/article_helpers.py
 # ./sayswho/rendering_helpers.py
 
+ner-model.tar.gz
+ner_model/*
+ner-model/*
+model-best/*
+
 testo.py
 dispo.py
 cluster_count*

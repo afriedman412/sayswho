@@ -2,14 +2,7 @@
 Cribbed from textacy!!!
 """
 import pytest
-import spacy
 from sayswho.quote_finder import quote_finder
-
-
-@pytest.fixture(scope="module")
-def nlp():
-    return spacy.load("en_core_web_lg")
-
 
 @pytest.mark.parametrize(
     "text, exp",

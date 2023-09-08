@@ -4,11 +4,11 @@ from sayswho import SaysWho
 
 spacy.prefer_gpu()
 
-
 @pytest.fixture(scope="module")
-def says_who_loaded():
+def says_who_loaded(says_who):
     test_text = open("./tests/qa_test_file.txt").read()
-    sw = SaysWho(test_text)
+    sw = SaysWho()
+    sw.attribute(test_text)
     return sw
 
 

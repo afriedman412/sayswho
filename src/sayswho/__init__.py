@@ -40,7 +40,7 @@ class SaysWho:
             self.__setattr__(v, spacy.load(eval(v)))
 
         if ner_nlp:
-            self.set_ner_model(ner_nlp)
+            self.set_ner_nlp(ner_nlp)
             
         self.prune = prune
         self.prep_text = prep_text
@@ -60,14 +60,10 @@ class SaysWho:
         """
         return 'ner_nlp' in self.__dict__
     
-    def set_ner_model(self, ner_nlp: str):
-        try:
-            self.ner_nlp = spacy.load(ner_nlp)
-            if 'sentencizer' not in ner_nlp.pipe_names:
-                self.ner_nlp.add_pipe("sentencizer")
-        except Exception as e:
-            raise Exception("NER model not properly loaded.")
-
+    def set_ner_nlp(self, ner_nlp_path: str):
+        self.ner_nlp = spacy.load(ner_nlp_path)
+        if 'sentencizer' not in self.ner_nlp.pipe_names:
+            self.ner_nlp.add_pipe("sentencizer")
 
     def expand_match(self, match=None):
         """
@@ -104,6 +100,8 @@ class SaysWho:
             text = helpers.prep_text_for_quote_detection(text)
         self.parse_text(text)
         self.quote_matches = self.get_matches()
+        if self.ner:
+            self.get_quote_ents()
         return
 
     def parse_text(self, text: str):
